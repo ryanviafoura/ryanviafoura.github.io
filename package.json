@@ -1,0 +1,23 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/src/index.js",
+  "bin": {
+    "figma-validator": "dist/src/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc && node dist/tests/validator.test.js",
+    "start": "node dist/src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
