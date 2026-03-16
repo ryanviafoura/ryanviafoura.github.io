@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "build:web": "tsc",
     "test": "tsc && node dist/tests/validator.test.js",
     "start": "node dist/src/index.js"
   },
