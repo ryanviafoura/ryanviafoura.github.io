@@ -1,4 +1,4 @@
-export type TokenType = 'color' | 'number' | 'string' | 'boolean' | 'dimension' | 'duration' | 'fontWeight' | 'fontFamily' | 'lineHeight' | 'letterSpacing' | 'opacity' | 'border' | 'shadow' | 'gradient' | 'typography';
+export type TokenType = 'color' | 'number' | 'string' | 'boolean' | 'dimension' | 'duration' | 'fontWeight' | 'fontFamily' | 'lineHeight' | 'letterSpacing' | 'opacity' | 'border' | 'shadow' | 'gradient' | 'typography' | 'float';
 
 export interface TokenValue {
   $value: any;

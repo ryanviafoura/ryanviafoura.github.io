@@ -3,32 +3,59 @@ import type { FigmaVariablesRoot, ValidationError, TokenType, TokenValue } from 
 const VALID_TYPES: TokenType[] = [
   'color', 'number', 'string', 'boolean', 'dimension', 'duration',
   'fontWeight', 'fontFamily', 'lineHeight', 'letterSpacing',
-  'opacity', 'border', 'shadow', 'gradient', 'typography'
+  'opacity', 'border', 'shadow', 'gradient', 'typography', 'float'
 ];
 
 export function validateFigmaVariables(data: any): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+  if (typeof data !== 'object' || data === null) {
     errors.push({
       path: [],
-      message: 'Root must be a JSON object',
+      message: 'Root must be a JSON object or array',
       type: 'invalid_structure'
     });
     return errors;
   }
 
-  // If it's the "variables2json" plugin format or similar collection-based format
-  if (data.collections && Array.isArray(data.collections)) {
-    data.collections.forEach((collection: any, index: number) => {
-       validateCollection(collection, ['collections', index.toString()], errors);
+  if (Array.isArray(data)) {
+    data.forEach((item, index) => {
+      validateRootItem(item, [index.toString()], errors);
     });
   } else {
-    // Assume it's a direct W3C Design Tokens format or a simple nested object
-    validateGroup(data, [], errors);
+    validateRootItem(data, [], errors);
   }
 
   return errors;
+}
+
+function validateRootItem(item: any, path: string[], errors: ValidationError[]) {
+  if (typeof item !== 'object' || item === null) {
+    errors.push({ path, message: 'Root item must be an object', type: 'invalid_structure' });
+    return;
+  }
+
+  // If it's the "variables2json" plugin format or similar collection-based format
+  if (item.collections && Array.isArray(item.collections)) {
+    item.collections.forEach((collection: any, index: number) => {
+       validateCollection(collection, [...path, 'collections', index.toString()], errors);
+    });
+  } else {
+    // Check if the object keys are collection names (contains "modes")
+    const keys = Object.keys(item);
+    let handledAsCollection = false;
+    for (const key of keys) {
+      if (item[key] && typeof item[key] === 'object' && ('modes' in item[key] || 'variables' in item[key])) {
+        validateCollection({ ...item[key], name: key }, [...path, key], errors);
+        handledAsCollection = true;
+      }
+    }
+
+    if (!handledAsCollection) {
+      // Assume it's a direct W3C Design Tokens format or a simple nested object
+      validateGroup(item, path, errors);
+    }
+  }
 }
 
 function validateCollection(collection: any, path: string[], errors: ValidationError[]) {
@@ -37,15 +64,14 @@ function validateCollection(collection: any, path: string[], errors: ValidationE
     return;
   }
 
-  if (!collection.name) {
-    errors.push({ path, message: 'Collection is missing a name', type: 'missing_field' });
-  }
-
   if (collection.modes && typeof collection.modes === 'object') {
     Object.entries(collection.modes).forEach(([modeName, modeData]: [string, any]) => {
       const modePath = [...path, 'modes', modeName];
       if (modeData.variables && typeof modeData.variables === 'object') {
         validateGroup(modeData.variables, [...modePath, 'variables'], errors);
+      } else {
+        // Fallback for formats where groups are directly under the mode (like the user sample)
+        validateGroup(modeData, modePath, errors);
       }
     });
   } else if (collection.variables && typeof collection.variables === 'object') {

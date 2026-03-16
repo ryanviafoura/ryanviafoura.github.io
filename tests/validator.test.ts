@@ -93,6 +93,48 @@ function runTests() {
         }
       },
       expectedErrors: 0
+    },
+    {
+      name: 'Root array with multiple collections',
+      data: [
+        {
+          "Collection 1": {
+            "modes": {
+              "Light": {
+                "variables": { "v1": { "$value": 1, "$type": "float" } }
+              }
+            }
+          }
+        },
+        {
+          "Collection 2": {
+            "modes": {
+              "Default": {
+                "variables": { "v2": { "$value": "hello", "$type": "string" } }
+              }
+            }
+          }
+        }
+      ],
+      expectedErrors: 0
+    },
+    {
+      name: 'User sample format with duplicate (no "variables" key)',
+      data: [
+        {
+          "Design System": {
+            "modes": {
+              "Light": {
+                "colors": {
+                  "primary": { "$value": "#f00", "$type": "color" },
+                  "Primary": { "$value": "#00f", "$type": "color" }
+                }
+              }
+            }
+          }
+        }
+      ],
+      expectedErrors: 1
     }
   ];
 

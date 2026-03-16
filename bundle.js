@@ -16,40 +16,63 @@
     "border",
     "shadow",
     "gradient",
-    "typography"
+    "typography",
+    "float"
   ];
   function validateFigmaVariables(data) {
     const errors = [];
-    if (typeof data !== "object" || data === null || Array.isArray(data)) {
+    if (typeof data !== "object" || data === null) {
       errors.push({
         path: [],
-        message: "Root must be a JSON object",
+        message: "Root must be a JSON object or array",
         type: "invalid_structure"
       });
       return errors;
     }
-    if (data.collections && Array.isArray(data.collections)) {
-      data.collections.forEach((collection, index) => {
-        validateCollection(collection, ["collections", index.toString()], errors);
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        validateRootItem(item, [index.toString()], errors);
       });
     } else {
-      validateGroup(data, [], errors);
+      validateRootItem(data, [], errors);
     }
     return errors;
+  }
+  function validateRootItem(item, path, errors) {
+    if (typeof item !== "object" || item === null) {
+      errors.push({ path, message: "Root item must be an object", type: "invalid_structure" });
+      return;
+    }
+    if (item.collections && Array.isArray(item.collections)) {
+      item.collections.forEach((collection, index) => {
+        validateCollection(collection, [...path, "collections", index.toString()], errors);
+      });
+    } else {
+      const keys = Object.keys(item);
+      let handledAsCollection = false;
+      for (const key of keys) {
+        if (item[key] && typeof item[key] === "object" && ("modes" in item[key] || "variables" in item[key])) {
+          validateCollection({ ...item[key], name: key }, [...path, key], errors);
+          handledAsCollection = true;
+        }
+      }
+      if (!handledAsCollection) {
+        validateGroup(item, path, errors);
+      }
+    }
   }
   function validateCollection(collection, path, errors) {
     if (typeof collection !== "object" || collection === null) {
       errors.push({ path, message: "Collection must be an object", type: "invalid_structure" });
       return;
     }
-    if (!collection.name) {
-      errors.push({ path, message: "Collection is missing a name", type: "missing_field" });
-    }
     if (collection.modes && typeof collection.modes === "object") {
       Object.entries(collection.modes).forEach(([modeName, modeData]) => {
         const modePath = [...path, "modes", modeName];
         if (modeData.variables && typeof modeData.variables === "object") {
           validateGroup(modeData.variables, [...modePath, "variables"], errors);
+        } else {
+          validateGroup(modeData, modePath, errors);
         }
       });
     } else if (collection.variables && typeof collection.variables === "object") {
